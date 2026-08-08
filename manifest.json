@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "whatdatmean",
+  "version": "0.1.0",
+  "description": "Highlight text on any page, get a context-aware definition from Gemini.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "whatdatmean@ammr-arf",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["websiteContent"]
+      }
+    }
+  },
+  "permissions": ["storage"],
+  "host_permissions": ["https://generativelanguage.googleapis.com/*"],
+  "background": {
+    "scripts": ["config.js", "background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_ui": {
+    "page": "options.html"
+  },
+  "icons": {
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png"
+  }
+}

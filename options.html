@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>whatdatmean settings</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+      color: #1c1b22;
+    }
+    h1 { font-size: 18px; }
+    label { display: block; font-weight: 600; margin: 16px 0 4px; }
+    .hint { font-size: 12px; color: #5b5b66; margin: 4px 0 0; }
+    .hint a { color: #5b4cdb; }
+    .key-row { display: flex; gap: 6px; }
+    input[type="password"], input[type="text"], select {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 13px;
+      border: 1px solid #cfcfd8;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 6px 14px;
+      font-size: 13px;
+      border: 1px solid #cfcfd8;
+      border-radius: 4px;
+      background: #f0f0f4;
+      cursor: pointer;
+    }
+    button:hover { background: #e0e0e6; }
+    button.primary { background: #5b4cdb; border-color: #5b4cdb; color: #fff; }
+    button.primary:hover { background: #4a3dc4; }
+    .actions { margin-top: 20px; display: flex; gap: 8px; align-items: center; }
+    #status { font-size: 13px; }
+    #status.ok { color: #017a37; }
+    #status.err { color: #c50042; }
+  </style>
+</head>
+<body>
+  <h1>whatdatmean settings</h1>
+
+  <label for="apiKey">Gemini API key</label>
+  <div class="key-row">
+    <input type="password" id="apiKey" placeholder="Leave empty to use the key from config.js">
+    <button id="toggleKey" type="button" title="Show/hide key">Show</button>
+  </div>
+  <p class="hint">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>. Stored locally on this computer only. If empty, the default key from the extension's <code>config.js</code> is used.</p>
+
+  <label for="model">Model</label>
+  <select id="model">
+    <option value="gemini-flash-lite-latest">gemini-flash-lite-latest (fastest, cheapest)</option>
+    <option value="gemini-flash-latest">gemini-flash-latest</option>
+  </select>
+
+  <label for="language">Answer definitions in</label>
+  <input type="text" id="language" placeholder="Leave empty for English / same language as the page">
+
+  <div class="actions">
+    <button id="save" class="primary" type="button">Save</button>
+    <button id="test" type="button">Test key</button>
+    <span id="status"></span>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
