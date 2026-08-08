@@ -50,14 +50,36 @@
         display: none;
         flex-direction: column;
       }
+      #popup .head {
+        margin-bottom: 6px;
+        flex-shrink: 0;
+      }
       #popup .word {
         font-weight: 700;
         font-size: 14px;
-        margin-bottom: 4px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        flex-shrink: 0;
+      }
+      #popup .meta {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        margin-top: 1px;
+      }
+      #popup .pos {
+        font-style: italic;
+        font-size: 12px;
+        color: #5b5b66;
+        white-space: nowrap;
+      }
+      #popup .note {
+        font-size: 11px;
+        color: #5b4cdb;
+        background: #efecff;
+        border-radius: 9px;
+        padding: 1px 7px;
+        white-space: nowrap;
       }
       #popup .body {
         white-space: pre-wrap;
@@ -65,6 +87,14 @@
         min-height: 0;
         overflow-y: auto;
       }
+      #popup .definition { margin-bottom: 7px; white-space: normal; }
+      #popup .examples {
+        margin: 0;
+        padding-left: 16px;
+        color: #52525b;
+        white-space: normal;
+      }
+      #popup .examples li { margin-bottom: 3px; }
       .skeleton-line {
         height: 11px;
         border-radius: 4px;
@@ -213,13 +243,38 @@
 
   // --- popup rendering ----------------------------------------------------
 
-  function renderSkeleton(word) {
-    popup.textContent = "";
+  function renderHead(word, partOfSpeech, note) {
+    const head = document.createElement("div");
+    head.className = "head";
 
     const wordEl = document.createElement("div");
     wordEl.className = "word";
     wordEl.textContent = word;
-    popup.appendChild(wordEl);
+    head.appendChild(wordEl);
+
+    if (partOfSpeech || note) {
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      if (partOfSpeech) {
+        const posEl = document.createElement("span");
+        posEl.className = "pos";
+        posEl.textContent = partOfSpeech;
+        meta.appendChild(posEl);
+      }
+      if (note) {
+        const noteEl = document.createElement("span");
+        noteEl.className = "note";
+        noteEl.textContent = note;
+        meta.appendChild(noteEl);
+      }
+      head.appendChild(meta);
+    }
+    popup.appendChild(head);
+  }
+
+  function renderSkeleton(word) {
+    popup.textContent = "";
+    renderHead(word, "", "");
 
     const bodyEl = document.createElement("div");
     bodyEl.className = "body";
@@ -237,17 +292,60 @@
     popup.appendChild(bodyEl);
   }
 
-  function renderPopup(word, bodyText, state, needsKey) {
-    popup.textContent = "";
+  // Appends `sentence` to `parent`, wrapping occurrences of `word` in <em>.
+  // Matches case-insensitively and extends over trailing word characters so
+  // inflections ("extricated" for "extricate") are italicized whole.
+  function appendWithWordItalicized(parent, sentence, word) {
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(escaped + "\\w*", "gi");
+    let last = 0;
+    let match;
+    while ((match = re.exec(sentence)) !== null) {
+      if (match.index > last) {
+        parent.appendChild(document.createTextNode(sentence.slice(last, match.index)));
+      }
+      const em = document.createElement("em");
+      em.textContent = match[0];
+      parent.appendChild(em);
+      last = match.index + match[0].length;
+    }
+    if (last < sentence.length) {
+      parent.appendChild(document.createTextNode(sentence.slice(last)));
+    }
+  }
 
-    const wordEl = document.createElement("div");
-    wordEl.className = "word";
-    wordEl.textContent = word;
-    popup.appendChild(wordEl);
+  function renderEntry(word, entry) {
+    popup.textContent = "";
+    renderHead(word, entry.partOfSpeech, entry.note);
 
     const bodyEl = document.createElement("div");
-    bodyEl.className = state ? `body ${state}` : "body";
-    bodyEl.textContent = bodyText;
+    bodyEl.className = "body";
+
+    const defEl = document.createElement("div");
+    defEl.className = "definition";
+    defEl.textContent = entry.definition;
+    bodyEl.appendChild(defEl);
+
+    if (entry.examples.length) {
+      const list = document.createElement("ul");
+      list.className = "examples";
+      for (const example of entry.examples) {
+        const item = document.createElement("li");
+        appendWithWordItalicized(item, example, word);
+        list.appendChild(item);
+      }
+      bodyEl.appendChild(list);
+    }
+    popup.appendChild(bodyEl);
+  }
+
+  function renderError(word, message, needsKey) {
+    popup.textContent = "";
+    renderHead(word, "", "");
+
+    const bodyEl = document.createElement("div");
+    bodyEl.className = "body error";
+    bodyEl.textContent = message;
     popup.appendChild(bodyEl);
 
     if (needsKey) {
@@ -289,9 +387,9 @@
     if (myRequest !== requestId) return; // dismissed or superseded
 
     if (result && result.ok) {
-      renderPopup(text, result.definition, "", false);
+      renderEntry(text, result.entry);
     } else {
-      renderPopup(text, (result && result.error) || "Unknown error.", "error", !!(result && result.needsKey));
+      renderError(text, (result && result.error) || "Unknown error.", !!(result && result.needsKey));
     }
     placePopup(rect);
   }
