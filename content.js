@@ -56,7 +56,26 @@
         flex-shrink: 0;
         max-height: 96px;
         overflow-y: auto;
+        padding-right: 20px;
       }
+      #popup .close {
+        position: absolute;
+        top: 6px;
+        right: 7px;
+        width: 20px;
+        height: 20px;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        color: #8f8f9d;
+        font: 400 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+      }
+      #popup .close:hover { background: #f0f0f4; color: #1c1b22; }
       #popup .word {
         font-weight: 700;
         font-size: 14px;
@@ -244,6 +263,28 @@
 
   // --- popup rendering ----------------------------------------------------
 
+  // Clears the popup and adds the close button present in every state.
+  function resetPopup() {
+    popup.textContent = "";
+
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "close";
+    closeBtn.textContent = "✕";
+    closeBtn.title = "Close";
+    // preventDefault on mousedown keeps the page selection intact; the
+    // actual close happens on click (after mouseup) so the released mouseup
+    // still lands inside the popup and can't re-summon the trigger button.
+    closeBtn.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      hideAll();
+    });
+    popup.appendChild(closeBtn);
+  }
+
   function renderHead(word, partOfSpeech, note) {
     const head = document.createElement("div");
     head.className = "head";
@@ -274,7 +315,7 @@
   }
 
   function renderSkeleton(word) {
-    popup.textContent = "";
+    resetPopup();
     renderHead(word, "", "");
 
     const bodyEl = document.createElement("div");
@@ -316,7 +357,7 @@
   }
 
   function renderEntry(word, entry) {
-    popup.textContent = "";
+    resetPopup();
     renderHead(word, entry.partOfSpeech, entry.note);
 
     const bodyEl = document.createElement("div");
@@ -341,7 +382,7 @@
   }
 
   function renderError(word, message, needsKey) {
-    popup.textContent = "";
+    resetPopup();
     renderHead(word, "", "");
 
     const bodyEl = document.createElement("div");
