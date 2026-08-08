@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-  const MAX_SELECTION_LENGTH = 200;
+  const MAX_SELECTION_LENGTH = 500;
   const CONTEXT_WINDOW = 250; // chars kept on each side of the selection
   const SHOW_DELAY_MS = 150;
 
@@ -39,7 +39,7 @@
       #popup {
         position: absolute;
         width: 360px;
-        height: 200px;
+        max-height: 200px;
         background: #ffffff;
         color: #1c1b22;
         border: 1px solid #d0d0d8;
@@ -49,17 +49,18 @@
         padding: 10px 12px;
         display: none;
         flex-direction: column;
+        overflow: hidden;
       }
       #popup .head {
         margin-bottom: 6px;
         flex-shrink: 0;
+        max-height: 96px;
+        overflow-y: auto;
       }
       #popup .word {
         font-weight: 700;
         font-size: 14px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        overflow-wrap: break-word;
       }
       #popup .meta {
         display: flex;
@@ -402,6 +403,11 @@
 
     const text = collapseWhitespace(selection.toString());
     if (!text || text.length > MAX_SELECTION_LENGTH) return;
+
+    // Clicking the trigger hides it on mousedown, so the released mouseup
+    // lands on the page and re-runs this check while the selection is still
+    // active. If the popup is already open for this exact selection, keep it.
+    if (captured && captured.text === text && popup.style.display === "flex") return;
 
     const rect = selection.getRangeAt(0).getBoundingClientRect();
     if (rect.width === 0 && rect.height === 0) return;

@@ -17,31 +17,43 @@ function cacheKey(text, context) {
 const RESPONSE_SCHEMA = {
   type: "OBJECT",
   properties: {
+    kind: { type: "STRING", enum: ["word", "phrase", "sentence"] },
     partOfSpeech: { type: "STRING" },
     definition: { type: "STRING" },
     examples: { type: "ARRAY", items: { type: "STRING" } },
     note: { type: "STRING" },
   },
-  required: ["partOfSpeech", "definition", "examples"],
-  propertyOrdering: ["partOfSpeech", "definition", "examples", "note"],
+  required: ["kind", "definition"],
+  propertyOrdering: ["kind", "partOfSpeech", "definition", "examples", "note"],
 };
 
 function buildPrompt(text, context, language) {
   const languageLine = language
-    ? `Write the definition, examples, and note in ${language}.`
+    ? `Write the definition and note in ${language}.`
     : "";
   return [
-    "Define the highlighted text as it is used in the given context. Fill the fields:",
+    "Explain the highlighted text as it is used in the given context.",
+    "",
+    'First classify it (kind field): "word" for a single word, "phrase" for a',
+    'short expression, idiom, or fragment that is not a complete sentence, or',
+    '"sentence" for one or more complete sentences or a complete clause.',
+    "",
+    'For kind "word" or "phrase", fill:',
     "- partOfSpeech: its part of speech as used in this context (noun, verb,",
     "  adjective, adverb, pronoun, preposition, conjunction, interjection), or",
     '  "phrase", "idiom", or "abbreviation" when that fits better.',
     "- definition: 1-2 concise sentences, specific to how it is used in this",
-    "  context. Do not repeat the context back. If the text is a phrase, define",
-    "  the phrase as a whole.",
+    "  context. Do not repeat the context back.",
     "- examples: at least two short example sentences using the highlighted text.",
-    '- note: a short label only when one applies — e.g. "slang", "informal",',
-    '  "jargon", "archaic", or the language name if the text is not English',
-    '  (e.g. "French") — otherwise an empty string.',
+    "",
+    'For kind "sentence", fill:',
+    "- definition: a plain-language explanation of what the sentence means in",
+    "  this context, 1-3 concise sentences. Do not repeat the sentence back.",
+    "- partOfSpeech: empty string. examples: empty array.",
+    "",
+    'Always fill note: a short label only when one applies — e.g. "slang",',
+    '"informal", "jargon", "archaic", "sarcastic", or the language name if the',
+    'text is not English (e.g. "French") — otherwise an empty string.',
     languageLine,
     "",
     `Highlighted text: "${text}"`,
@@ -136,10 +148,12 @@ async function define({ text, context }) {
   if (!entry.definition) {
     return { ok: false, error: "Gemini returned an empty definition, try again." };
   }
+  const isSentence = entry.kind === "sentence";
   entry = {
-    partOfSpeech: entry.partOfSpeech || "",
+    kind: isSentence ? "sentence" : entry.kind === "phrase" ? "phrase" : "word",
+    partOfSpeech: isSentence ? "" : entry.partOfSpeech || "",
     definition: entry.definition,
-    examples: Array.isArray(entry.examples) ? entry.examples : [],
+    examples: isSentence || !Array.isArray(entry.examples) ? [] : entry.examples,
     note: entry.note || "",
   };
 
